@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/frech87/bookstore_oauth-go/oauth/errors"
 	"github.com/mercadolibre/golang-restclient/rest"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -78,13 +77,11 @@ func AuthenticateRequest(request *http.Request) *errors.RestErr {
 		return nil
 	}
 	at, err := getAccessToken(accessToken)
-	log.Println(at)
 	if err != nil {
 		if err.Status == http.StatusNotFound {
 			return nil
 		}
-		return errors.NewBadRequestError(fmt.Sprintf("%v", at))
-
+		return err
 	}
 	request.Header.Add(headerXCallerId, fmt.Sprintf("%v", at.UserId))
 	request.Header.Add(headerXClientId, fmt.Sprintf("%v", at.ClientId))
@@ -114,7 +111,6 @@ func getAccessToken(accessTokenId string) (*accessToken, *errors.RestErr) {
 	}
 
 	var at accessToken
-	log.Println(response)
 	err := json.Unmarshal(response.Bytes(), &at)
 	if err != nil {
 		return nil, errors.NewInternalServerError("invalid error unmarshal access token response")
