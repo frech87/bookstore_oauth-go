@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/frech87/bookstore_oauth-go/oauth/errors"
 	"github.com/mercadolibre/golang-restclient/rest"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,8 +28,8 @@ var (
 
 type accessToken struct {
 	Id       string `json:"id"`
-	UserId   string `json:"user_id"`
-	ClientId string `json:"client_id"`
+	UserId   int64  `json:"user_id"`
+	ClientId int64  `json:"client_id"`
 }
 
 type oauthClient struct {
@@ -77,14 +78,16 @@ func AuthenticateRequest(request *http.Request) *errors.RestErr {
 		return nil
 	}
 	at, err := getAccessToken(accessToken)
+	log.Println(at)
 	if err != nil {
 		if err.Status == http.StatusNotFound {
 			return nil
 		}
-		return err
+		return errors.NewBadRequestError(fmt.Sprintf("%v", at))
+
 	}
-	request.Header.Add(headerXCallerId, at.UserId)
-	request.Header.Add(headerXClientId, at.ClientId)
+	request.Header.Add(headerXCallerId, fmt.Sprintf("%v", at.UserId))
+	request.Header.Add(headerXClientId, fmt.Sprintf("%v", at.ClientId))
 	return nil
 }
 
@@ -111,6 +114,7 @@ func getAccessToken(accessTokenId string) (*accessToken, *errors.RestErr) {
 	}
 
 	var at accessToken
+	log.Println(response)
 	err := json.Unmarshal(response.Bytes(), &at)
 	if err != nil {
 		return nil, errors.NewInternalServerError("invalid error unmarshal access token response")
